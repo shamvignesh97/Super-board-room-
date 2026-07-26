@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Super Board Room - Live Nifty, Sensex, Portfolio & Multi-Agent Trading Board">
+<title>Super Board Room | Live Nifty • Sensex • Portfolio</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0b1220;--card:#162032;--border:#25334a;--text:#e2e8f0;--muted:#94a3b8;--accent:#0ea5e9;--gold:#f59e0b;--green:#10b981;--red:#ef4444;--purple:#a855f7;--cyan:#06b6d4}
+body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.45;-webkit-font-smoothing:antialiased}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin:10px 0}
+.header{position:sticky;top:0;z-index:50;background:rgba(11,18,32,0.92);backdrop-filter:blur(12px);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.btn{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:9px;cursor:pointer;font-weight:600;margin:2px;font-size:13px}
+.btn:active{opacity:.8}
+.btn-ghost{background:transparent;border:1px solid #334155;color:var(--text)}
+.btn-gold{background:var(--gold);color:#000}
+.btn-purple{background:var(--purple)}
+.btn-cyan{background:var(--cyan)}
+.btn-red{background:var(--red)}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.badge{font-size:9px;padding:2px 7px;border-radius:20px;background:#25334a;margin-left:4px;font-weight:600}
+.avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.msg{display:flex;gap:8px;margin:10px 0}
+.scroll{max-height:340px;overflow:auto;scrollbar-width:thin}
+.super{border:3px solid var(--gold);background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(14,165,233,0.08))}
+.kpi{font-size:18px;font-weight:700}
+.live-up{color:var(--green)}
+.live-down{color:var(--red)}
+.stock-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px}
+.stock-row:last-child{border-bottom:none}
+.stock-sym{font-weight:600;min-width:70px}
+.tiny{font-size:11px;color:var(--muted)}
+input,select{background:#0b1220;border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:13px;width:100%}
+.chart-box{height:160px;margin-top:8px}
+#installBtn{display:none}
+@media (max-width:600px){.header{flex-direction:column;align-items:flex-start}.kpi{font-size:15px}.scroll{max-height:260px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#0ea5e9);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🏛️</div>
+    <div>
+      <b style="font-size:15px">Super Board Room</b><br>
+      <small style="color:var(--muted)">Live Nifty • Sensex • Personal Portfolio</small>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+    <button class="btn" onclick="startAll()">▶️ Start All</button>
+    <button class="btn btn-ghost" onclick="resetAll()">Reset</button>
+    <button class="btn btn-ghost" onclick="toggleVoice()">🎙️ <span id="v">ON</span></button>
+    <button class="btn btn-ghost" id="installBtn" onclick="installPWA()">📲 Install</button>
+  </div>
+</div>
+
+<div style="padding:12px;max-width:1500px;margin:0 auto">
+
+  <div class="grid4">
+    <div class="card">
+      <small style="color:var(--muted)">🇮🇳 India Indices (Live)</small>
+      <div class="kpi" style="font-size:15px;margin-top:4px">
+        <span id="live-nifty">Nifty …</span><br>
+        <span id="live-sensex" style="font-size:14px">Sensex …</span>
+      </div>
+      <div class="tiny" id="live-bank">Bank Nifty …</div>
+      <div class="tiny" style="margin-top:4px"><span id="live-vix">India VIX …</span> · <span id="live-usd">USDINR …</span></div>
+      <div class="tiny" style="margin-top:6px">
+        <span id="live-status">● Connecting…</span>
+        <button class="btn btn-ghost" style="padding:2px 8px;font-size:10px;margin-left:6px" onclick="updateLive()">🔄</button>
+        <span id="last-upd" style="margin-left:6px"></span>
+      </div>
+      <div class="chart-box"><canvas id="niftyChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <small style="color:var(--muted)">🌍 Global Indices</small>
+      <div class="kpi" style="font-size:15px;margin-top:4px">
+        <span id="live-spx">S&P 500 …</span><br>
+        <span id="live-nasdaq" style="font-size:14px">Nasdaq …</span>
+      </div>
+      <div class="tiny" id="live-ftse">FTSE 100 …</div>
+      <div class="tiny" style="margin-top:4px"><span id="live-usvix">US VIX …</span></div>
+      <div class="chart-box"><canvas id="sensexChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <small style="color:var(--muted)">💎 Penny Activity</small>
+      <div class="kpi" id="penny-vol">₹4.2 Cr</div>
+      <small class="tiny">Simulated high-vol • Risk: High</small>
+    </div>
+
+    <div class="card">
+      <small style="color:var(--muted)">👑 Super Consensus</small>
+      <div class="kpi" id="super-kpi" style="color:var(--gold)">WAIT</div>
+      <small id="super-sub" class="tiny">Waiting for chiefs…</small>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:4px;border-color:var(--gold)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div>
+        <b>👤 My Personal Portfolio</b>
+        <span class="tiny" style="margin-left:8px">Saved on this device</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <input id="addSymbol" placeholder="Symbol (e.g. RELIANCE.NS)" style="width:140px">
+        <input id="addName" placeholder="Name (optional)" style="width:110px">
+        <button class="btn btn-gold" onclick="addToPortfolio()">+ Add</button>
+      </div>
+    </div>
+    <div id="myPortfolio" class="grid4" style="gap:8px">
+      <div class="tiny">No stocks yet. Add your first stock above.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div>
+        <b>📊 Market Watchlist</b>
+        <span class="tiny" style="margin-left:8px">NSE + US • Auto-refresh</span>
+      </div>
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="updateLive()">Refresh</button>
+    </div>
+    <div id="watchlist" class="grid4" style="gap:8px">
+      <div class="tiny">Loading…</div>
+    </div>
+  </div>
+
+  <div class="grid4" style="margin-top:8px">
+    <div class="card">
+      <h4>🏛️ India Board <span class="badge">11 Agents</span></h4>
+      <div style="margin:6px 0">
+        <button class="btn" onclick="startRoom('main')">Start</button>
+        <button class="btn btn-ghost" onclick="pauseRoom('main')">Pause</button>
+      </div>
+      <div class="scroll" id="chat-main"></div>
+      <div class="card" style="background:#0b1220;margin-top:8px;padding:10px">
+        <b class="tiny">Chief Summary</b>
+        <div id="sum-main" style="font-size:12px;margin-top:4px;color:var(--muted)">Waiting…</div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:var(--purple)">
+      <h4>💎 Penny War Room <span class="badge">₹1-₹1L</span></h4>
+      <div style="margin:6px 0">
+        <button class="btn btn-purple" onclick="startRoom('penny')">Start Hunt</button>
+        <button class="btn btn-ghost" onclick="pauseRoom('penny')">Pause</button>
+      </div>
+      <div class="scroll" id="chat-penny"></div>
+      <div class="card" style="background:#0b1220;margin-top:8px;padding:10px">
+        <b class="tiny">Penny Chief Summary</b>
+        <div id="sum-penny" style="font-size:12px;margin-top:4px;color:var(--muted)">Waiting…</div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:var(--cyan)">
+      <h4>🌍 US / UK Board <span class="badge">11 Agents</span></h4>
+      <div style="margin:6px 0">
+        <button class="btn btn-cyan" onclick="startRoom('usuk')">Start</button>
+        <button class="btn btn-ghost" onclick="pauseRoom('usuk')">Pause</button>
+      </div>
+      <div class="scroll" id="chat-usuk"></div>
+      <div class="card" style="background:#0b1220;margin-top:8px;padding:10px">
+        <b class="tiny">US/UK Chief Summary</b>
+        <div id="sum-usuk" style="font-size:12px;margin-top:4px;color:var(--muted)">Waiting…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card super">
+    <h2 style="font-size:18px;margin-bottom:4px">👑 Super Board Room — Final Call</h2>
+    <p class="tiny" style="margin-bottom:10px">3 Chiefs debate and deliver one consolidated allocation call.</p>
+    <div style="margin:8px 0">
+      <button class="btn btn-gold" onclick="startRoom('super')">▶️ Start Super Discussion</button>
+      <button class="btn btn-ghost" onclick="pauseRoom('super')">Pause</button>
+      <button class="btn btn-ghost" onclick="clearRoom('super')">Clear</button>
+    </div>
+    <div class="scroll" id="chat-super" style="max-height:400px"></div>
+    <div class="card" style="background:#000;margin-top:12px;border:2px solid var(--gold)" id="final-super">
+      <h3 style="font-size:15px;color:var(--gold)">📢 FINAL CALL TO YOU</h3>
+      <div id="sum-super" style="font-size:13px;line-height:1.7;margin-top:8px">Waiting for chiefs…</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:20px 0 40px;color:var(--muted);font-size:11px">
+    Super Board Room PWA · Educational simulation only · Not financial advice
+  </div>
+</div>
+
+<script>
+let myStocks = JSON.parse(localStorage.getItem('myPortfolio') || '[]');
+
+function savePortfolio() {
+  localStorage.setItem('myPortfolio', JSON.stringify(myStocks));
+  renderMyPortfolio();
+}
+
+function addToPortfolio() {
+  const sym = document.getElementById('addSymbol').value.trim().toUpperCase();
+  const name = document.getElementById('addName').value.trim() || sym;
+  if (!sym) return alert('Enter a symbol (e.g. RELIANCE.NS or AAPL)');
+  if (myStocks.find(s => s.symbol === sym)) return alert('Already added');
+  myStocks.push({symbol: sym, name: name});
+  document.getElementById('addSymbol').value = '';
+  document.getElementById('addName').value = '';
+  savePortfolio();
+  updateLive();
+}
+
+function removeFromPortfolio(symbol) {
+  myStocks = myStocks.filter(s => s.symbol !== symbol);
+  savePortfolio();
+}
+
+function renderMyPortfolio() {
+  const box = document.getElementById('myPortfolio');
+  if (myStocks.length === 0) {
+    box.innerHTML = '<div class="tiny">No stocks yet. Add your first stock above.</div>';
+    return;
+  }
+  let html = '';
+  myStocks.forEach(s => {
+    const live = (window.livePrices && window.livePrices[s.symbol]) || null;
+    const price = live ? live.price : '—';
+    const chg = live ? live.change : null;
+    html += `
+      <div class="card" style="margin:0;padding:10px">
+        <div class="stock-row">
+          <span class="stock-sym">${s.name}</span>
+          <span class="${chg>=0?'live-up':'live-down'}">${price} ${chg!=null?fmtChg(chg):''}</span>
+        </div>
+        <div class="tiny" style="display:flex;justify-content:space-between">
+          <span>${s.symbol}</span>
+          <button class="btn btn-red" style="padding:2px 8px;font-size:10px" onclick="removeFromPortfolio('${s.symbol}')">Remove</button>
+        </div>
+      </div>`;
+  });
+  box.innerHTML = html;
+}
+
+const base = [
+  {id:'chairman',n:'Chairman',e:'🎙️',c:'#0ea5e9',r:'MOD'},
+  {id:'bull',n:'Bull',e:'🐂',c:'#10b981',r:'BULL'},
+  {id:'bear',n:'Bear',e:'🐻',c:'#ef4444',r:'BEAR'},
+  {id:'quantT',n:'Quant Trader',e:'⚡',c:'#f59e0b',r:'TRADER'},
+  {id:'quantR',n:'Quant Researcher',e:'🔬',c:'#06b6d4',r:'RESEARCH'},
+  {id:'fii',n:'FII Flow',e:'💰',c:'#8b5cf6',r:'FLOW'},
+  {id:'opt',n:'Options',e:'📉',c:'#ec4899',r:'OPT'},
+  {id:'macro',n:'Macro',e:'🌍',c:'#14b8a6',r:'MACRO'},
+  {id:'penny',n:'Penny/Sales',e:'💎',c:'#a855f7',r:'PENNY'},
+  {id:'strategy',n:'Head Strategy',e:'👔',c:'#f97316',r:'CHIEF'},
+  {id:'board',n:'Board Agent',e:'📋',c:'#10b981',r:'SUMMARY'}
+];
+const pennyA = [
+  {id:'scout',n:'Scout',e:'🔍',c:'#a855f7',r:'SCOUT'},
+  {id:'hunter',n:'Hunter',e:'🎯',c:'#ec4899',r:'HUNTER'},
+  {id:'whale',n:'Whale',e:'🐋',c:'#0ea5e9',r:'WHALE'},
+  {id:'guard',n:'Risk Guard',e:'⚠️',c:'#ef4444',r:'RISK'},
+  {id:'closer',n:'Closer',e:'💰',c:'#10b981',r:'CLOSER'},
+  {id:'pennyBoard',n:'Penny Chief',e:'📋',c:'#f59e0b',r:'CHIEF'}
+];
+const superA = [
+  {id:'indiaChief',n:'India Chief',e:'🇮🇳',c:'#0ea5e9',r:'INDIA'},
+  {id:'pennyChief',n:'Penny Chief',e:'💎',c:'#a855f7',r:'PENNY'},
+  {id:'usukChief',n:'US/UK Chief',e:'🌍',c:'#06b6d4',r:'US/UK'},
+  {id:'superChief',n:'Super Chairman',e:'👑',c:'#f59e0b',r:'SUPER'}
+];
+
+const db = {
+  main: {
+    bull: ["Nifty holding support, bias buy on dips.","FII buying visible.","Bank Nifty strength supporting market."],
+    bear: ["VIX too low — complacency risk.","Global cues mixed.","Protect profits near resistance."],
+    quantT: ["Slippage elevated — reduce size.","Momentum positive but watch volume."],
+    quantR: ["Correlation momentum 0.72 intact.","Mean reversion weak near ATH."],
+    fii: ["FII net positive this week.","DII supporting on dips."],
+    opt: ["PCR elevated — resistance building.","Max pain shifting higher."],
+    macro: ["USDINR mild headwind.","Rate cut expectations supportive."],
+    penny: ["SBFC high volume zone interesting.","HBL relative volume strong."],
+    strategy: ["Lean long, size moderate.","Prefer quality large-cap."],
+    chairman: ["Next speaker: Bull case.","Keep position sizing disciplined."],
+    board: ["India summary ready for Super Board."]
+  },
+  penny: {
+    scout: ["High volume micro-cap spotted.","Fresh breakout candidate."],
+    hunter: ["50DMA break with block trade.","Risk-reward attractive."],
+    whale: ["Unusual ₹1L block activity.","Accumulation pattern visible."],
+    guard: ["ASM risk on one name — avoid.","Circuit risk high, strict SL."],
+    closer: ["Basket idea 2% capital, SL 15%.","High risk high reward only."],
+    pennyBoard: ["Penny summary ready. 3 high-conviction picks."]
+  },
+  usuk: {
+    bull: ["S&P ATH momentum strong.","Nasdaq AI theme intact."],
+    bear: ["US VIX low but overbought.","Profit booking risk rising."],
+    quantT: ["US slippage only 5bps.","Prefer liquid names."],
+    quantR: ["US Sharpe better than India.","Momentum quality higher."],
+    fii: ["US equity inflows strong.","Money rotating to US growth."],
+    opt: ["0DTE GEX positive.","Call skew elevated."],
+    macro: ["Fed priced for cuts.","Dollar mild headwind for EM."],
+    penny: ["US micro speculative only.","Keep size tiny."],
+    strategy: ["70% US / 30% UK preferred.","Hedge with small VIX calls."],
+    chairman: ["US view first, then UK."],
+    board: ["US/UK summary ready."]
+  },
+  super: {
+    indiaChief: ["India Board: Bull bias. Nifty constructive. Penny interest present."],
+    pennyChief: ["Penny: 3 picks, high risk, 2% capital max, SL 15%."],
+    usukChief: ["US/UK: Constructive. Prefer 70% US / 30% UK."],
+    superChief: ["Consolidating all rooms… Final allocation coming."]
+  }
+};
+
+let S = {
+  main:{run:false,t:null,h:{},idx:0,last:null,voice:true},
+  penny:{run:false,t:null,h:{},idx:0,last:null,voice:true},
+  usuk:{run:false,t:null,h:{},idx:0,last:null,voice:true},
+  super:{run:false,t:null,h:{},idx:0,last:null,voice:true}
+};
+
+function getMsg(room,id){const list=db[room][id]||["..."];const h=S[room].h[id]||[];let f=list.filter(x=>!h.includes(x));if(!f.length){f=list;S[room].h[id]=[];}const m=f[Math.floor(Math.random()*f.length)];h.push(m);if(h.length>2)h.shift();S[room].h[id]=h;return m;}
+
+function add(room,id){
+  const all=room==='main'?base:room==='penny'?pennyA:room==='usuk'?base:superA;
+  const a=all.find(x=>x.id===id);if(!a)return;
+  const chat=document.getElementById('chat-'+room);
+  const div=document.createElement('div');div.className='msg';
+  let text=getMsg(room,id);
+  const live=window.livePrices||{};
+  if(room==='main'&&id==='bull'&&live.nifty) text=`Nifty LIVE ${live.nifty.price} (${fmtChg(live.nifty.change)}) holding support.`;
+  if(room==='main'&&id==='bear'&&live.indiaVix) text=`India VIX LIVE ${live.indiaVix.price} — complacency risk.`;
+  if(room==='usuk'&&id==='bull'&&live.spx) text=`S&P LIVE ${live.spx.price} (${fmtChg(live.spx.change)}) momentum intact.`;
+  div.innerHTML=`<div class="avatar" style="background:${a.c}20;border:1px solid ${a.c}">${a.e}</div><div><b style="font-size:11px">${a.n}</b> <span class="badge">${a.r}</span><div style="font-size:13px;margin-top:2px">${text}</div></div>`;
+  chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
+  if(S[room].voice){try{const u=new SpeechSynthesisUtterance(text.slice(0,110));u.rate=0.95;u.volume=0.4;speechSynthesis.speak(u);}catch(e){}}
+  if(room!=='super'&&S[room].idx%6===0)sumRoom(room);
+  if(room==='super'&&S[room].idx%4===0)sumSuper();
+}
+
+function startRoom(room){
+  if(S[room].run)return;S[room].run=true;
+  const order=room==='main'?['chairman','bull','bear','quantT','quantR','fii','opt','penny','macro','strategy','board']:room==='penny'?['scout','hunter','whale','guard','closer','pennyBoard']:room==='usuk'?['chairman','bull','bear','quantT','quantR','fii','opt','penny','macro','strategy','board']:['indiaChief','pennyChief','usukChief','superChief'];
+  S[room].t=setInterval(()=>{if(!S[room].run)return;const id=order[S[room].idx%order.length];if(S[room].last===id){S[room].idx++;return;}add(room,id);S[room].last=id;S[room].idx++;},room==='super'?4200:3200);
+}
+function pauseRoom(room){S[room].run=false;clearInterval(S[room].t);speechSynthesis.cancel();}
+function clearRoom(room){document.getElementById('chat-'+room).innerHTML='';S[room].h={};S[room].idx=0;}
+function resetAll(){['main','penny','usuk','super'].forEach(r=>{pauseRoom(r);clearRoom(r);});document.getElementById('sum-super').innerHTML='Reset done.';document.getElementById('super-kpi').innerText='WAIT';}
+let voiceOn=true;function toggleVoice(){voiceOn=!voiceOn;['main','penny','usuk','super'].forEach(r=>S[r].voice=voiceOn);document.getElementById('v').innerText=voiceOn?'ON':'OFF';if(!voiceOn)speechSynthesis.cancel();}
+function startAll(){['main','penny','usuk'].forEach(r=>startRoom(r));setTimeout(()=>startRoom('super'),9000);}
+function sumRoom(room){if(room==='main')document.getElementById('sum-main').innerHTML=`7 Bull / 4 Bear. Buy Nifty bias.`;else if(room==='penny')document.getElementById('sum-penny').innerHTML=`3 picks • 2% capital • SL 15%.`;else if(room==='usuk')document.getElementById('sum-usuk').innerHTML=`70% US / 30% UK constructive.`;}
+function sumSuper(){const live=window.livePrices||{};const n=live.nifty?`Nifty ${live.nifty.price}`:'Nifty';document.getElementById('sum-super').innerHTML=`<b style="color:#f59e0b">👑 SUPER FINAL CALL</b><br><br>• India Core: ${n} — 50-60% long bias<br>• Penny Satellite: 2-3% capital only, high risk<br>• US/UK: 70% US + 30% UK<br>• Overall: 55% India · 25% US/UK · 5% Penny · 15% Cash`;document.getElementById('super-kpi').innerText='BUY 55/25/5/15';document.getElementById('super-sub').innerText='India + US constructive';}
+
+function fmtChg(c){if(c==null||isNaN(c))return'';return(c>=0?'+':'')+c.toFixed(2)+'%';}
+function colorChg(c){return c>=0?'live-up':'live-down';}
+
+async function fetchYahoo(symbol){
+  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1m&range=1d`;
+  try{
+    let res=await fetch(url,{cache:'no-store'});
+    if(!res.ok)throw 0;
+    return parseYahoo(await res.json());
+  }catch(e){
+    try{
+      const proxy=`https://corsproxy.io/?${encodeURIComponent(url)}`;
+      const res=await fetch(proxy,{cache:'no-store'});
+      return parseYahoo(await res.json());
+    }catch(e2){return null;}
+  }
+}
+function parseYahoo(data){
+  try{
+    const m=data.chart.result[0].meta;
+    const price=m.regularMarketPrice??m.previousClose;
+    const prev=m.chartPreviousClose??m.previousClose;
+    const change=prev?((price-prev)/prev*100):0;
+    return{price:Number(price).toFixed(2),change:Number(change),prev:Number(prev).toFixed(2)};
+  }catch(e){return null;}
+}
+
+const symbols={nifty:'^NSEI',sensex:'^BSESN',bank:'^NSEBANK',indiaVix:'^INDIAVIX',spx:'^GSPC',nasdaq:'^IXIC',ftse:'^FTSE',usVix:'^VIX',usdInr:'INR=X',reliance:'RELIANCE.NS',tcs:'TCS.NS',hdfcbank:'HDFCBANK.NS',infy:'INFY.NS',sbin:'SBIN.NS',itc:'ITC.NS',aapl:'AAPL',nvda:'NVDA',msft:'MSFT',tsla:'TSLA'};
+const portfolioMeta=[{key:'reliance',name:'RELIANCE',market:'NSE'},{key:'tcs',name:'TCS',market:'NSE'},{key:'hdfcbank',name:'HDFCBANK',market:'NSE'},{key:'infy',name:'INFY',market:'NSE'},{key:'sbin',name:'SBIN',market:'NSE'},{key:'itc',name:'ITC',market:'NSE'},{key:'aapl',name:'AAPL',market:'US'},{key:'nvda',name:'NVDA',market:'US'},{key:'msft',name:'MSFT',market:'US'},{key:'tsla',name:'TSLA',market:'US'}];
+
+let niftyChart,sensexChart;
+function initCharts(){
+  const opt={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}};
+  niftyChart=new Chart(document.getElementById('niftyChart'),{type:'line',data:{labels:[],datasets:[{data:[],borderColor:'#0ea5e9',borderWidth:2,pointRadius:0,tension:0.3}]},options:opt});
+  sensexChart=new Chart(document.getElementById('sensexChart'),{type:'line',data:{labels:[],datasets:[{data:[],borderColor:'#f59e0b',borderWidth:2,pointRadius:0,tension:0.3}]},options:opt});
+}
+
+async function updateLive(){
+  document.getElementById('live-status').innerHTML='● Updating…';
+  document.getElementById('live-status').style.color='#f59e0b';
+  const results={};
+  const keys=Object.keys(symbols);
+  for(let i=0;i<keys.length;i++){
+    const r=await fetchYahoo(symbols[keys[i]]);
+    if(r)results[keys[i]]=r;
+    await new Promise(r=>setTimeout(r,200));
+  }
+  for(const s of myStocks){
+    if(!results[s.symbol]){
+      const r=await fetchYahoo(s.symbol);
+      if(r)results[s.symbol]=r;
+      await new Promise(r=>setTimeout(r,200));
+    }
+  }
+  window.livePrices=results;
+
+  if(results.nifty)document.getElementById('live-nifty').innerHTML=`Nifty <b>${results.nifty.price}</b> <span class="${colorChg(results.nifty.change)}">${fmtChg(results.nifty.change)}</span>`;
+  if(results.sensex)document.getElementById('live-sensex').innerHTML=`Sensex <b>${results.sensex.price}</b> <span class="${colorChg(results.sensex.change)}">${fmtChg(results.sensex.change)}</span>`;
+  if(results.bank)document.getElementById('live-bank').innerHTML=`Bank Nifty ${results.bank.price} <span class="${colorChg(results.bank.change)}">${fmtChg(results.bank.change)}</span>`;
+  if(results.indiaVix)document.getElementById('live-vix').innerText=`India VIX ${results.indiaVix.price}`;
+  if(results.usdInr)document.getElementById('live-usd').innerText=`USDINR ${results.usdInr.price}`;
+  if(results.spx)document.getElementById('live-spx').innerHTML=`S&P <b>${results.spx.price}</b> <span class="${colorChg(results.spx.change)}">${fmtChg(results.spx.change)}</span>`;
+  if(results.nasdaq)document.getElementById('live-nasdaq').innerHTML=`Nasdaq <b>${results.nasdaq.price}</b> <span class="${colorChg(results.nasdaq.change)}">${fmtChg(results.nasdaq.change)}</span>`;
+  if(results.ftse)document.getElementById('live-ftse').innerHTML=`FTSE ${results.ftse.price} <span class="${colorChg(results.ftse.change)}">${fmtChg(results.ftse.change)}</span>`;
+  if(results.usVix)document.getElementById('live-usvix').innerText=`US VIX ${results.usVix.price}`;
+
+  const ok=Object.keys(results).length;
+  const st=document.getElementById('live-status');
+  st.innerHTML=ok>6?'● LIVE':ok>0?`● Partial (${ok})`:'● Offline';
+  st.style.color=ok>6?'#10b981':ok>0?'#f59e0b':'#ef4444';
+  document.getElementById('last-upd').innerText=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  if(results.nifty&&niftyChart){
+    niftyChart.data.labels.push('');
+    niftyChart.data.datasets[0].data.push(parseFloat(results.nifty.price));
+    if(niftyChart.data.labels.length>20){niftyChart.data.labels.shift();niftyChart.data.datasets[0].data.shift();}
+    niftyChart.update('none');
+  }
+  if(results.sensex&&sensexChart){
+    sensexChart.data.labels.push('');
+    sensexChart.data.datasets[0].data.push(parseFloat(results.sensex.price));
+    if(sensexChart.data.labels.length>20){sensexChart.data.labels.shift();sensexChart.data.datasets[0].data.shift();}
+    sensexChart.update('none');
+  }
+
+  renderWatchlist(results);
+  renderMyPortfolio();
+}
+
+function renderWatchlist(results){
+  const c=document.getElementById('watchlist');
+  let html='';
+  portfolioMeta.forEach(p=>{
+    const d=results[p.key];
+    if(!d){html+=`<div class="card" style="margin:0;padding:10px"><div class="stock-row"><span class="stock-sym">${p.name}</span><span class="tiny">—</span></div></div>`;return;}
+    html+=`<div class="card" style="margin:0;padding:10px"><div class="stock-row"><span class="stock-sym">${p.name}</span><span class="stock-price ${colorChg(d.change)}">${d.price} <small>${fmtChg(d.change)}</small></span></div><div class="tiny">${p.market}</div></div>`;
+  });
+  c.innerHTML=html;
+}
+
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;const b=document.getElementById('installBtn');if(b)b.style.display='inline-block';});
+function installPWA(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>deferredPrompt=null);}}
+
+initCharts();
+renderMyPortfolio();
+updateLive();
+setInterval(updateLive,60000);
+</script>
+</body>
+</html>
